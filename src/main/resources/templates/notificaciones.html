@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones - <span th:text="${usuario}">Usuario</span></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .filter-group select {
+            padding: 8px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:hover {
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .no-leida {
+            background: #fff3cd !important;
+            font-weight: 600;
+        }
+
+        .tipo-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tipo-INFO {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .tipo-ALERTA {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .tipo-URGENTE {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .leido-status {
+            font-size: 1.2em;
+        }
+
+        .leido {
+            color: #28a745;
+        }
+
+        .no-leido {
+            color: #dc3545;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Sistema de Notificaciones</h1>
+            <p>Usuario: <strong th:text="${usuario}">usuario1</strong></p>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="tipoFiltro">Filtrar por tipo:</label>
+                <select id="tipoFiltro" onchange="filtrarPorTipo()">
+                    <option value="">Todos</option>
+                    <option th:each="tipo : ${tipos}" th:value="${tipo}" th:text="${tipo}"></option>
+                </select>
+            </div>
+            <a th:href="@{/notificaciones/generar-ejemplo/{usuario}(usuario=${usuario})}" class="btn btn-primary">
+                Generar Notificaciones de Ejemplo
+            </a>
+        </div>
+
+        <div class="table-container">
+            <div id="loading" class="loading pulse">Cargando notificaciones...</div>
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <h3>No hay notificaciones</h3>
+                <p>Las notificaciones aparecerán aquí cuando estén disponibles.</p>
+            </div>
+            <table id="notificacionesTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Mensaje</th>
+                        <th>Tipo</th>
+                        <th>Fecha</th>
+                        <th>Leído</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="notificacionesBody">
+                    <!-- Las notificaciones se insertarán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const usuario = /*[[${usuario}]]*/ 'usuario1';
+        let todasLasNotificaciones = [];
+        let notificacionesEliminadas = new Set(); // Registrar IDs de notificaciones eliminadas
+        let filtroTipoActual = '';
+        let cargandoInicial = true; // Flag para saber si estamos en la carga inicial
+
+        // Conectar al stream SSE
+        const eventSource = new EventSource('/notificaciones/sse/' + usuario);
+        
+        eventSource.onmessage = function(event) {
+            const notificacion = JSON.parse(event.data);
+            // Si estamos en la carga inicial, solo agregar
+            // Si no, actualizar o agregar según corresponda
+            if (cargandoInicial) {
+                agregarNotificacion(notificacion);
+            } else {
+                actualizarOAgregarNotificacion(notificacion);
+            }
+        };
+
+        eventSource.onerror = function(error) {
+            console.error('Error en SSE:', error);
+        };
+
+        // Cargar notificaciones existentes
+        fetch('/notificaciones/api/' + usuario)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                // Asegurar que los valores booleanos se interpreten correctamente
+                todasLasNotificaciones = data.map(n => ({
+                    ...n,
+                    leido: n.leido === true || n.leido === 'true' || n.leido === 1
+                }));
+                console.log('Notificaciones cargadas:', todasLasNotificaciones);
+                cargandoInicial = false; // Marcar que terminó la carga inicial
+                renderizarNotificaciones();
+            })
+            .catch(error => {
+                console.error('Error al cargar notificaciones:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+                cargandoInicial = false;
+            });
+
+        function agregarNotificacion(notificacion) {
+            // Verificar si ya existe para evitar duplicados
+            const existe = todasLasNotificaciones.some(n => n.id === notificacion.id);
+            if (!existe && !notificacionesEliminadas.has(notificacion.id)) {
+                todasLasNotificaciones.unshift(notificacion); // Agregar al inicio
+                renderizarNotificaciones();
+            }
+        }
+
+        function actualizarOAgregarNotificacion(notificacion) {
+            // Si fue eliminada, no agregarla de nuevo
+            if (notificacionesEliminadas.has(notificacion.id)) {
+                return;
+            }
+            
+            // Asegurar que el valor booleano se interprete correctamente
+            notificacion.leido = notificacion.leido === true || notificacion.leido === 'true' || notificacion.leido === 1;
+            
+            // Buscar si ya existe
+            const index = todasLasNotificaciones.findIndex(n => n.id === notificacion.id);
+            if (index !== -1) {
+                // Actualizar la notificación existente con los datos más recientes de la BD
+                Object.assign(todasLasNotificaciones[index], notificacion);
+                renderizarNotificaciones();
+            } else {
+                // Es una notificación nueva, agregarla al inicio
+                todasLasNotificaciones.unshift(notificacion);
+                renderizarNotificaciones();
+            }
+        }
+
+        function renderizarNotificaciones() {
+            const tbody = document.getElementById('notificacionesBody');
+            tbody.innerHTML = '';
+
+            let notificacionesFiltradas = todasLasNotificaciones;
+            if (filtroTipoActual) {
+                notificacionesFiltradas = todasLasNotificaciones.filter(n => n.tipo === filtroTipoActual);
+            }
+
+            if (notificacionesFiltradas.length === 0) {
+                document.getElementById('notificacionesTable').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('notificacionesTable').style.display = 'table';
+            document.getElementById('empty-state').style.display = 'none';
+
+            notificacionesFiltradas.forEach(notificacion => {
+                const tr = document.createElement('tr');
+                if (!notificacion.leido) {
+                    tr.classList.add('no-leida');
+                }
+
+                const fecha = new Date(notificacion.fecha);
+                const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                tr.innerHTML = `
+                    <td>${escapeHtml(notificacion.mensaje)}</td>
+                    <td><span class="tipo-badge tipo-${notificacion.tipo}">${escapeHtml(notificacion.tipo)}</span></td>
+                    <td>${fechaFormateada}</td>
+                    <td class="leido-status">
+                        ${notificacion.leido ? '<span class="leido">✓</span>' : '<span class="no-leido">✗</span>'}
+                    </td>
+                    <td class="actions">
+                        ${!notificacion.leido ? `
+                            <form style="display: inline;" onsubmit="marcarLeido(event, '${notificacion.id}')">
+                                <input type="hidden" name="usuario" value="${usuario}">
+                                <button type="submit" class="btn btn-success btn-sm">Marcar Leído</button>
+                            </form>
+                        ` : ''}
+                        <form style="display: inline;" onsubmit="eliminarNotificacion(event, '${notificacion.id}')">
+                            <input type="hidden" name="usuario" value="${usuario}">
+                            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                        </form>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarPorTipo() {
+            filtroTipoActual = document.getElementById('tipoFiltro').value;
+            renderizarNotificaciones();
+        }
+
+        function marcarLeido(event, id) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            const usuarioParam = formData.get('usuario') || usuario;
+            
+            fetch(`/notificaciones/${id}/leer?usuario=${encodeURIComponent(usuarioParam)}`, {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al marcar como leído');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Notificación marcada como leída:', data);
+                // Actualizar la notificación localmente
+                const notificacion = todasLasNotificaciones.find(n => n.id === id);
+                if (notificacion) {
+                    notificacion.leido = true;
+                    renderizarNotificaciones();
+                }
+            })
+            .catch(error => {
+                console.error('Error al marcar como leído:', error);
+                alert('Error al marcar como leído. Por favor, intente de nuevo.');
+            });
+        }
+
+        function eliminarNotificacion(event, id) {
+            event.preventDefault();
+            if (!confirm('¿Está seguro de que desea eliminar esta notificación?')) {
+                return;
+            }
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const usuarioParam = formData.get('usuario') || usuario;
+            
+            fetch(`/notificaciones/${id}/eliminar?usuario=${encodeURIComponent(usuarioParam)}`, {
+                method: 'POST'
+            })
+            .then(response => {
+                console.log('Respuesta del servidor:', response.status);
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Error al eliminar la notificación');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Notificación eliminada exitosamente:', data);
+                // Registrar que fue eliminada para que no vuelva a aparecer
+                notificacionesEliminadas.add(id);
+                // Remover la notificación de la lista local
+                todasLasNotificaciones = todasLasNotificaciones.filter(n => n.id !== id);
+                renderizarNotificaciones();
+            })
+            .catch(error => {
+                console.error('Error al eliminar:', error);
+                alert('Error al eliminar la notificación: ' + error.message);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
+
